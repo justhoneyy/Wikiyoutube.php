@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 // CONFIGURATION
 const BOT_TOKEN = '6047507658:AAGHC5tFppE2yqLpQi4KOrz7TwGeM0Mc-LI';
 const CHAT_ID = '5574741182';
-const TARGET_URL = 'https://www.instagram.com/reel/DXoVmf2hT0P/?utm_source=ig_web_copy_link'; 
+const TARGET_URL = 'https://en.wikipedia.org/wiki/Ekbalpur_triple_murder'; 
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
