@@ -18,7 +18,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // PROXY FIX: Fetches Wikipedia server-side to bypass CORS and 404s
 app.get('/view-article', async (req, res) => {
     try {
-        const response = await fetch('https://en.wikipedia.org/wiki/Film');
+        const response = await fetch('https://business.google.com/uk/ad-solutions/youtube-ads/');
         let html = await response.text();
         
         // Injects Wikipedia's styles so it looks real
